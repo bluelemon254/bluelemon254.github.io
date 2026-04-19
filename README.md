@@ -1,2 +1,17 @@
 # bluelemon254.github.io
-Personal Github page for academics. 
+
+Academic notes and engineering posts built with React + Vite and deployed via GitHub Pages.
+
+## Local Development
+
+```bash
+npm install
+npm run dev
+```
+
+## Build
+
+```bash
+npm run build
+npm run preview
+```
