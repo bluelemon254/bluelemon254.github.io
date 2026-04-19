@@ -1,6 +1,6 @@
 # bluelemon254.github.io
 
-Academic notes and engineering posts built with React + Vite and deployed via GitHub Pages.
+Academic notes built with React + Vite and deployed via GitHub Pages.
 
 ## Local Development
 
