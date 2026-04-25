@@ -442,11 +442,54 @@ button.folder-header:hover {
 }
 
 .article-math {
-  overflow-x: auto;
   padding: 10px 12px;
   border-radius: 10px;
   border: 1px solid var(--border);
   background: #141414;
+  max-width: 100%;
+}
+
+.article-math--fit {
+  width: fit-content;
+  overflow: visible;
+}
+
+.article-math--full {
+  width: 100%;
+  overflow: visible;
+}
+
+.article-math--scroll {
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.article-math-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: flex-start;
+  max-width: 100%;
+}
+
+.article-math-row--nowrap {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+}
+
+.article-math mjx-container {
+  max-width: 100%;
+}
+
+.article-math--fit mjx-container[display='true'],
+.article-math--full mjx-container[display='true'] {
+  margin: 0;
+}
+
+.article-math--scroll mjx-container[display='true'] {
+  margin: 0;
+  min-width: max-content;
 }
 
 .article-code-block {

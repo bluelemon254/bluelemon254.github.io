@@ -16,7 +16,27 @@ export const vectorCalculusGradientDivergenceCurlPost = {
     },
     {
       type: 'math',
+      mode: 'full',
       value: '\\nabla \\cdot (\\nabla \\times \\mathbf{F}) = 0'
+    },
+    {
+      type: 'paragraph',
+      text: '수식 표시 모드는 상황에 맞게 선택할 수 있습니다. full은 전체 폭, scroll은 가로 스크롤, row는 여러 박스를 한 줄에 배치합니다.'
+    },
+    {
+      type: 'math',
+      mode: 'scroll',
+      value:
+        '\\sum_{k=1}^{n} \\left(\\frac{1}{k} + \\frac{1}{k+1} + \\frac{1}{k+2}\\right)^2 = \\frac{1}{36} \\left(6 H_{n}^{(2)} + 6 H_{n+1}^{(2)} + 6 H_{n+2}^{(2)} + 4 H_{n} + 4 H_{n+1} + 4 H_{n+2}\\right)'
+    },
+    {
+      type: 'math',
+      layout: 'row',
+      values: [
+        { mode: 'fit', value: '\\nabla f' },
+        { mode: 'fit', value: '\\nabla \\cdot \\mathbf{F}' },
+        { mode: 'fit', value: '\\nabla \\times \\mathbf{F}' }
+      ]
     },
     {
       type: 'image',

@@ -1,10 +1,50 @@
+import { useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { BlockMath } from 'react-katex';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import Tag from '../components/Tag';
 import { posts } from '../data/posts';
 import { formatDate } from '../utils/formatDate';
+
+const ALLOWED_MATH_MODES = new Set(['fit', 'scroll', 'full']);
+
+function getMathMode(mode) {
+  return ALLOWED_MATH_MODES.has(mode) ? mode : 'fit';
+}
+
+function normalizeMathItems(block) {
+  const defaultMode = getMathMode(block.mode);
+
+  if (Array.isArray(block.values) && block.values.length > 0) {
+    return block.values
+      .map((item) => {
+        if (typeof item === 'string') {
+          return { value: item, mode: defaultMode };
+        }
+
+        if (item && typeof item === 'object' && typeof item.value === 'string') {
+          return { value: item.value, mode: getMathMode(item.mode || defaultMode) };
+        }
+
+        return null;
+      })
+      .filter(Boolean);
+  }
+
+  if (typeof block.value === 'string') {
+    return [{ value: block.value, mode: defaultMode }];
+  }
+
+  return [];
+}
+
+function renderMathItem(item, key) {
+  return (
+    <div key={key} className={`article-math article-math--${item.mode}`}>
+      {`$$${item.value}$$`}
+    </div>
+  );
+}
 
 function renderContentBlock(block, key) {
   if (typeof block === 'string') {
@@ -14,12 +54,26 @@ function renderContentBlock(block, key) {
   switch (block.type) {
     case 'paragraph':
       return <p key={key}>{block.text}</p>;
-    case 'math':
-      return (
-        <div key={key} className="article-math">
-          <BlockMath math={block.value} />
-        </div>
-      );
+    case 'math': {
+      const items = normalizeMathItems(block);
+
+      if (!items.length) {
+        return null;
+      }
+
+      if (block.layout === 'row' || items.length > 1) {
+        return (
+          <div
+            key={key}
+            className={`article-math-row${block.wrap === false ? ' article-math-row--nowrap' : ''}`}
+          >
+            {items.map((item, index) => renderMathItem(item, `${key}-${index}`))}
+          </div>
+        );
+      }
+
+      return renderMathItem(items[0], key);
+    }
     case 'image':
       return (
         <figure key={key} className="article-figure">
@@ -49,6 +103,16 @@ function renderContentBlock(block, key) {
 export default function PostPage() {
   const { slug } = useParams();
   const post = posts.find((item) => item.slug === slug);
+
+  useEffect(() => {
+    if (!post) {
+      return;
+    }
+
+    if (typeof window !== 'undefined' && window.MathJax?.typesetPromise) {
+      window.MathJax.typesetPromise();
+    }
+  }, [post]);
 
   if (!post) {
     return (
