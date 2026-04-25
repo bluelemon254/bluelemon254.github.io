@@ -46,6 +46,84 @@ function renderMathItem(item, key) {
   );
 }
 
+function renderParagraphColumns(block, key) {
+  const columns = Array.isArray(block.columns) ? block.columns.filter((item) => typeof item === 'string') : [];
+
+  if (!columns.length) {
+    return null;
+  }
+
+  return (
+    <div key={key} className="article-paragraph-columns">
+      {columns.map((text, index) => (
+        <p key={`${key}-${index}`}>{text}</p>
+      ))}
+    </div>
+  );
+}
+
+function renderTableBlock(block, key) {
+  const headers = Array.isArray(block.headers)
+    ? block.headers.filter((item) => typeof item === 'string')
+    : [];
+  const rows = Array.isArray(block.rows)
+    ? block.rows
+        .filter((row) => Array.isArray(row) && row.length > 0)
+        .map((row) => row.map((cell) => (typeof cell === 'string' ? cell : String(cell))))
+    : [];
+
+  if (!headers.length && !rows.length) {
+    return null;
+  }
+
+  return (
+    <figure key={key} className="article-table-wrap">
+      <table className="article-table">
+        {headers.length ? (
+          <thead>
+            <tr>
+              {headers.map((header, index) => (
+                <th key={`${key}-h-${index}`} scope="col">
+                  {header}
+                </th>
+              ))}
+            </tr>
+          </thead>
+        ) : null}
+        <tbody>
+          {rows.map((row, rowIndex) => (
+            <tr key={`${key}-r-${rowIndex}`}>
+              {row.map((cell, cellIndex) => (
+                <td key={`${key}-r-${rowIndex}-c-${cellIndex}`}>{cell}</td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      {block.caption ? <figcaption>{block.caption}</figcaption> : null}
+    </figure>
+  );
+}
+
+function renderImageRowBlock(block, key) {
+  const images = Array.isArray(block.images) ? block.images : [];
+
+  if (!images.length) {
+    return null;
+  }
+
+  return (
+    <div key={key} className="article-image-row">
+      {images.map((item, index) => (
+        <figure key={`${key}-img-${index}`} className="article-image-row-item">
+          <img src={item.src} alt={item.alt || ''} loading="lazy" />
+          {item.caption ? <figcaption>{item.caption}</figcaption> : null}
+        </figure>
+      ))}
+    </div>
+  );
+}
+
 function renderContentBlock(block, key) {
   if (typeof block === 'string') {
     return <p key={key}>{block}</p>;
@@ -54,6 +132,8 @@ function renderContentBlock(block, key) {
   switch (block.type) {
     case 'paragraph':
       return <p key={key}>{block.text}</p>;
+    case 'paragraph-columns':
+      return renderParagraphColumns(block, key);
     case 'math': {
       const items = normalizeMathItems(block);
 
@@ -74,6 +154,10 @@ function renderContentBlock(block, key) {
 
       return renderMathItem(items[0], key);
     }
+    case 'table':
+      return renderTableBlock(block, key);
+    case 'image-row':
+      return renderImageRowBlock(block, key);
     case 'image':
       return (
         <figure key={key} className="article-figure">

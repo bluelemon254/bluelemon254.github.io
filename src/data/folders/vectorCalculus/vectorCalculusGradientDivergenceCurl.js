@@ -8,16 +8,33 @@ export const vectorCalculusGradientDivergenceCurlPost = {
   content: [
     {
       type: 'paragraph',
-      text: 'Gradient는 가장 빠르게 증가하는 방향을, Divergence는 유출입의 세기를, Curl은 회전 경향을 측정합니다.'
+      text: 'Gradient는 \\(\\nabla f\\)처럼 가장 빠르게 증가하는 방향을, Divergence는 \\(\\nabla \\cdot \\mathbf{F}\\)처럼 유출입의 세기를, Curl은 \\(\\nabla \\times \\mathbf{F}\\)처럼 회전 경향을 측정합니다.'
     },
     {
       type: 'paragraph',
-      text: '세 연산자는 형태가 비슷해 보여도 입력과 출력의 타입이 다르므로 어떤 장에 적용하는지 항상 먼저 확인해야 합니다.'
+      text: '세 연산자는 형태가 비슷해 보여도 입력과 출력의 타입이 다르므로, 예를 들어 $f: \\mathbb{R}^n \\to \\mathbb{R}$일 때는 $\\nabla f$를, $\\mathbf{F}: \\mathbb{R}^n \\to \\mathbb{R}^n$일 때는 $\\nabla \\cdot \\mathbf{F}$ 또는 $\\nabla \\times \\mathbf{F}$를 쓰는지 먼저 확인해야 합니다.'
     },
     {
       type: 'math',
       mode: 'full',
       value: '\\nabla \\cdot (\\nabla \\times \\mathbf{F}) = 0'
+    },
+    {
+      type: 'table',
+      headers: ['연산자', '입력', '출력', '핵심 의미'],
+      rows: [
+        ['Gradient $\\nabla f$', '스칼라장 $f$', '벡터장', '가장 빠른 증가 방향'],
+        ['Divergence $\\nabla \\cdot \\mathbf{F}$', '벡터장 $\\mathbf{F}$', '스칼라장', '유출입(발산) 세기'],
+        ['Curl $\\nabla \\times \\mathbf{F}$', '벡터장 $\\mathbf{F}$', '벡터장', '국소 회전 경향']
+      ],
+      caption: '세 연산자의 입력/출력 타입과 물리적 해석 비교'
+    },
+    {
+      type: 'paragraph-columns',
+      columns: [
+        'Gradient 관점에서는 함수값이 가장 빠르게 증가하는 방향이 중요하며, 방향미분의 최대값이 $\\|\\nabla f\\|$라는 점이 직관을 만들어 줍니다.',
+        'Divergence/Curl 관점에서는 장 자체의 흐름 구조가 중요합니다. 유체 문제에서는 $\\nabla \\cdot \\mathbf{F}$로 압축/팽창을, $\\nabla \\times \\mathbf{F}$로 소용돌이 성분을 읽습니다.'
+      ]
     },
     {
       type: 'paragraph',
@@ -39,10 +56,24 @@ export const vectorCalculusGradientDivergenceCurlPost = {
       ]
     },
     {
-      type: 'image',
-      src: '/Figure_2.png',
-      alt: '벡터장 시각화 Figure 2',
-      caption: 'Figure 2. 벡터장 흐름과 회전 성분 예시'
+      type: 'math', 
+      mode: 'fit', 
+      value: 's'
+    },
+    {
+      type: 'image-row',
+      images: [
+        {
+          src: '/Figure_2.png',
+          alt: '벡터장 시각화 Figure 2',
+          caption: 'Figure 2. 벡터장 흐름과 회전 성분 예시'
+        },
+        {
+          src: '/folder_icon.webp',
+          alt: '폴더 아이콘',
+          caption: 'Folder icon'
+        }
+      ]
     },
     {
       type: 'code',
