@@ -420,6 +420,34 @@ button.folder-header:hover {
   color: #d8d8d8;
 }
 
+.article-divider {
+  width: 100%;
+  margin: 2px 0;
+  border: none;
+  border-top: 1px solid var(--border);
+}
+
+.article-list {
+  margin: 0;
+  padding-left: 1.3rem;
+  display: grid;
+  gap: 8px;
+  color: #d8d8d8;
+  line-height: 1.8;
+}
+
+.article-list li {
+  margin: 0;
+}
+
+.article-list--ordered {
+  list-style: decimal;
+}
+
+.article-list--unordered {
+  list-style: disc;
+}
+
 .article-paragraph-columns {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -485,6 +513,56 @@ button.folder-header:hover {
   font-size: 0.9rem;
 }
 
+.article-collapsible {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: #151515;
+  overflow: hidden;
+}
+
+.article-collapsible summary {
+  list-style: none;
+  cursor: pointer;
+  padding: 12px 14px;
+  font-weight: 700;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.article-collapsible summary::-webkit-details-marker {
+  display: none;
+}
+
+.article-collapsible summary::before {
+  content: '▸';
+  color: var(--accent);
+  transition: transform 0.2s ease;
+}
+
+.article-collapsible[open] summary::before {
+  transform: rotate(90deg);
+}
+
+.article-collapsible[open] summary {
+  border-bottom: 1px solid var(--border);
+}
+
+.article-collapsible-body {
+  padding: 12px 14px;
+  display: grid;
+  gap: 12px;
+}
+
+.article-collapsible:not([open]) .article-collapsible-body {
+  display: none;
+}
+
+.article-collapsible-body .article-code-block {
+  margin: 0;
+}
+
 .article-table-wrap {
   margin: 4px 0;
   border: 1px solid var(--border);
@@ -527,11 +605,31 @@ button.folder-header:hover {
 }
 
 .article-math {
+  position: relative;
   padding: 10px 12px;
   border-radius: 10px;
   border: 1px solid var(--border);
   background: #141414;
   max-width: 100%;
+}
+
+.article-math-expression {
+  min-height: 24px;
+}
+
+.article-math-number {
+  position: absolute;
+  right: 10px;
+  bottom: 8px;
+  display: inline-block;
+  margin: 0;
+  padding: 0 3px;
+  color: var(--muted);
+  background: rgba(20, 20, 20, 0.86);
+  font-size: 0.82rem;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  pointer-events: none;
 }
 
 .article-math--fit {
@@ -556,6 +654,11 @@ button.folder-header:hover {
   gap: 10px;
   align-items: flex-start;
   max-width: 100%;
+}
+
+.article-math-row .article-math--full {
+  flex: 1 1 320px;
+  width: auto;
 }
 
 .article-math-row--nowrap {

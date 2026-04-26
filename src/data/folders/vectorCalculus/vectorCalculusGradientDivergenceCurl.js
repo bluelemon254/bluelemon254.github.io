@@ -11,8 +11,22 @@ export const vectorCalculusGradientDivergenceCurlPost = {
       text: 'Gradient는 \\(\\nabla f\\)처럼 가장 빠르게 증가하는 방향을, Divergence는 \\(\\nabla \\cdot \\mathbf{F}\\)처럼 유출입의 세기를, Curl은 \\(\\nabla \\times \\mathbf{F}\\)처럼 회전 경향을 측정합니다.'
     },
     {
-      type: 'paragraph',
-      text: '세 연산자는 형태가 비슷해 보여도 입력과 출력의 타입이 다르므로, 예를 들어 $f: \\mathbb{R}^n \\to \\mathbb{R}$일 때는 $\\nabla f$를, $\\mathbf{F}: \\mathbb{R}^n \\to \\mathbb{R}^n$일 때는 $\\nabla \\cdot \\mathbf{F}$ 또는 $\\nabla \\times \\mathbf{F}$를 쓰는지 먼저 확인해야 합니다.'
+      type: 'collapsible',
+      title: '입력/출력 타입을 먼저 확인해야 하는 이유',
+      content: [
+        {
+          type: 'paragraph',
+          text: '세 연산자는 형태가 비슷해 보여도 입력과 출력의 타입이 다릅니다. 예를 들어 $f: \\mathbb{R}^n \\to \\mathbb{R}$일 때는 $\\nabla f$를, $\\mathbf{F}: \\mathbb{R}^n \\to \\mathbb{R}^n$일 때는 $\\nabla \\cdot \\mathbf{F}$ 또는 $\\nabla \\times \\mathbf{F}$를 써야 합니다.'
+        },
+        {
+          type: 'bullet-points',
+          items: [
+            'Gradient: 스칼라장을 입력으로 받아 벡터장을 출력',
+            'Divergence: 벡터장을 입력으로 받아 스칼라장을 출력',
+            'Curl: 벡터장을 입력으로 받아 벡터장을 출력'
+          ]
+        }
+      ]
     },
     {
       type: 'math',

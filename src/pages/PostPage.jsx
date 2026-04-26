@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
@@ -38,10 +38,13 @@ function normalizeMathItems(block) {
   return [];
 }
 
-function renderMathItem(item, key) {
+function renderMathItem(item, key, equationNumber) {
   return (
     <div key={key} className={`article-math article-math--${item.mode}`}>
-      {`$$${item.value}$$`}
+      <div className="article-math-expression">{`$$${item.value}$$`}</div>
+      {typeof equationNumber === 'number' ? (
+        <span className="article-math-number">({equationNumber})</span>
+      ) : null}
     </div>
   );
 }
@@ -124,18 +127,152 @@ function renderImageRowBlock(block, key) {
   );
 }
 
+function renderCollapsibleBlock(block, key) {
+  const title = typeof block.title === 'string' && block.title.trim().length > 0
+    ? block.title
+    : '자세히 보기';
+  const items = Array.isArray(block.content) ? block.content : [];
+
+  return (
+    <details key={key} className="article-collapsible">
+      <summary>{title}</summary>
+      <div className="article-collapsible-body">
+        {items.map((item, index) => renderContentBlock(item, `${key}-content-${index}`))}
+      </div>
+    </details>
+  );
+}
+
+function numberMathBlocks(blocks, startAt = 1) {
+  let equationCounter = startAt;
+
+  const numberedBlocks = blocks.map((block) => {
+    if (!block || typeof block !== 'object') {
+      return block;
+    }
+
+    if (block.type === 'collapsible' && Array.isArray(block.content)) {
+      const nested = numberMathBlocks(block.content, equationCounter);
+      equationCounter = nested.nextEquationNumber;
+
+      return {
+        ...block,
+        content: nested.blocks
+      };
+    }
+
+    if (block.type !== 'math') {
+      return block;
+    }
+
+    const items = normalizeMathItems(block);
+
+    if (!items.length) {
+      return block;
+    }
+
+    if (block.numbered === false) {
+      return {
+        ...block,
+        _equationNumbers: []
+      };
+    }
+
+    const equationNumbers = items.map(() => {
+      const current = equationCounter;
+      equationCounter += 1;
+      return current;
+    });
+
+    return {
+      ...block,
+      _equationNumbers: equationNumbers
+    };
+  });
+
+  return {
+    blocks: numberedBlocks,
+    nextEquationNumber: equationCounter
+  };
+}
+
+function normalizeListItems(block) {
+  if (!Array.isArray(block.items)) {
+    return [];
+  }
+
+  return block.items
+    .map((item) => {
+      if (typeof item === 'string') {
+        return item;
+      }
+
+      if (item && typeof item === 'object' && typeof item.text === 'string') {
+        return item.text;
+      }
+
+      return null;
+    })
+    .filter((item) => typeof item === 'string' && item.trim().length > 0);
+}
+
+function renderEnumerationBlock(block, key) {
+  const items = normalizeListItems(block);
+
+  if (!items.length) {
+    return null;
+  }
+
+  return (
+    <ol key={key} className="article-list article-list--ordered">
+      {items.map((item, index) => (
+        <li key={`${key}-item-${index}`}>{item}</li>
+      ))}
+    </ol>
+  );
+}
+
+function renderBulletPointsBlock(block, key) {
+  const items = normalizeListItems(block);
+
+  if (!items.length) {
+    return null;
+  }
+
+  return (
+    <ul key={key} className="article-list article-list--unordered">
+      {items.map((item, index) => (
+        <li key={`${key}-item-${index}`}>{item}</li>
+      ))}
+    </ul>
+  );
+}
+
+function isMarkdownDivider(text) {
+  return typeof text === 'string' && text.trim() === '---';
+}
+
 function renderContentBlock(block, key) {
   if (typeof block === 'string') {
+    if (isMarkdownDivider(block)) {
+      return <hr key={key} className="article-divider" aria-hidden="true" />;
+    }
+
     return <p key={key}>{block}</p>;
   }
 
   switch (block.type) {
     case 'paragraph':
+      if (isMarkdownDivider(block.text)) {
+        return <hr key={key} className="article-divider" aria-hidden="true" />;
+      }
+
       return <p key={key}>{block.text}</p>;
     case 'paragraph-columns':
       return renderParagraphColumns(block, key);
     case 'math': {
       const items = normalizeMathItems(block);
+      const equationNumbers = Array.isArray(block._equationNumbers) ? block._equationNumbers : [];
 
       if (!items.length) {
         return null;
@@ -147,17 +284,25 @@ function renderContentBlock(block, key) {
             key={key}
             className={`article-math-row${block.wrap === false ? ' article-math-row--nowrap' : ''}`}
           >
-            {items.map((item, index) => renderMathItem(item, `${key}-${index}`))}
+            {items.map((item, index) =>
+              renderMathItem(item, `${key}-${index}`, equationNumbers[index])
+            )}
           </div>
         );
       }
 
-      return renderMathItem(items[0], key);
+      return renderMathItem(items[0], key, equationNumbers[0]);
     }
     case 'table':
       return renderTableBlock(block, key);
+    case 'enumeration':
+      return renderEnumerationBlock(block, key);
+    case 'bullet-points':
+      return renderBulletPointsBlock(block, key);
     case 'image-row':
       return renderImageRowBlock(block, key);
+    case 'collapsible':
+      return renderCollapsibleBlock(block, key);
     case 'image':
       return (
         <figure key={key} className="article-figure">
@@ -187,6 +332,14 @@ function renderContentBlock(block, key) {
 export default function PostPage() {
   const { slug } = useParams();
   const post = posts.find((item) => item.slug === slug);
+
+  const renderedContent = useMemo(() => {
+    if (!post) {
+      return [];
+    }
+
+    return numberMathBlocks(post.content).blocks;
+  }, [post]);
 
   useEffect(() => {
     if (!post) {
@@ -231,7 +384,7 @@ export default function PostPage() {
         </div>
 
         <div className="article-body">
-          {post.content.map((block, index) => renderContentBlock(block, `${post.slug}-${index}`))}
+          {renderedContent.map((block, index) => renderContentBlock(block, `${post.slug}-${index}`))}
         </div>
       </article>
 

@@ -1,9 +1,9 @@
-import { vectorCalculusPosts } from './folders/vectorCalculus/index';
+import { emPosts } from './folders/em/index';
 
 export const postFolders = [
   {
-    name: '벡터미적분학',
-    posts: vectorCalculusPosts
+    name: '전자기학',
+    posts: emPosts
   }
 ];
 
