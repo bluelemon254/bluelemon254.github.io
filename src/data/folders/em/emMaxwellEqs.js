@@ -359,7 +359,7 @@ export const emMaxwellEqsPost = {
       content: [
         {
           type: 'paragraph', 
-          text: '단위를 생각할 때 \\( Q = CV \\), \\( \\Phi = LI \\)에 각각 \\( \\mathbf D = \\varepsilon \\mathbf E \\), \\( \\mathbf B = \\mu \\mathbf H \\)를 대응시키면 좋다. 각각 거리와 거리 제곱을 나누면 된다. 나머지는 기억 안 나면 차원 해석하면 된다. '
+          text: '단위를 생각할 때 \\( Q = CV \\), \\( \\Phi = LI \\)에 각각 \\( \\mathbf D = \\varepsilon \\mathbf E \\), \\( \\mathbf B = \\mu \\mathbf H \\)를 대응시키면 좋다. 각각 거리와 거리 제곱을 나누면 되고, 나머지는 기억 안 나면 차원 해석하면 된다. '
         }
       ]
     }
