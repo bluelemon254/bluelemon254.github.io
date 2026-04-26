@@ -351,12 +351,12 @@ export const emMaxwellEqsPost = {
     }, 
     {
       type: 'paragraph', 
-      mode: '공기에서 나타나는 고유 임피던스는 \\( \\eta_0 = \\sqrt{\\frac{\\mu_0}{\\varepsilon_0}} \\approx 120 \\pi \\)이다. '
+      text: '공기에서 나타나는 고유 임피던스는 \\( \\eta_0 = \\sqrt{\\frac{\\mu_0}{\\varepsilon_0}} \\approx 120 \\pi \\)이다. '
     }, 
     {
       type: 'collapsible', 
       title: '물리량 단위 정리', 
-      items: [
+      content: [
         {
           type: 'paragraph', 
           text: '단위를 생각할 때 \\( Q = CV \\), \\( \\Phi = LI \\)에 각각 \\( \\mathbf D = \\varepsilon \\mathbf E \\), \\( \\mathbf B = \\mu \\mathbf H \\)를 대응시키면 좋다. 각각 거리와 거리 제곱을 나누면 된다. 나머지는 기억 안 나면 차원 해석하면 된다. '
