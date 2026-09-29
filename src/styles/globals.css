@@ -117,9 +117,11 @@ img {
 .page-stack,
 .single-column-page {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 20px;
   width: min(100%, var(--content));
   margin: 0 auto;
+  min-width: 0;
 }
 
 .hero-card,
@@ -140,6 +142,7 @@ img {
 .post-article,
 .empty-state {
   padding: 28px;
+  min-width: 0;
 }
 
 .eyebrow {
@@ -411,7 +414,9 @@ button.folder-header:hover {
 .article-body {
   margin-top: 26px;
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 16px;
+  min-width: 0;
 }
 
 .article-body p {
@@ -605,31 +610,64 @@ button.folder-header:hover {
 }
 
 .article-math {
+  box-sizing: border-box;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  column-gap: 10px;
+  align-items: center;
   position: relative;
   padding: 10px 12px;
   border-radius: 10px;
   border: 1px solid var(--border);
   background: #141414;
   max-width: 100%;
+  min-width: 0;
 }
 
 .article-math-expression {
   min-height: 24px;
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
 }
 
 .article-math-number {
-  position: absolute;
-  right: 10px;
-  bottom: 8px;
+  grid-column: 2;
   display: inline-block;
   margin: 0;
-  padding: 0 3px;
   color: var(--muted);
-  background: rgba(20, 20, 20, 0.86);
   font-size: 0.82rem;
   font-variant-numeric: tabular-nums;
   line-height: 1;
   pointer-events: none;
+}
+
+.article-math--numbered {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.article-math--numbered .article-math-number {
+  grid-column: 2;
+  grid-row: 1;
+  align-self: center;
+  justify-self: end;
+}
+
+.article-math--centered .article-math-expression,
+.article-math--scrolling .article-math-expression {
+  grid-column: 1 / -1;
+  grid-row: 1;
+  justify-self: center;
+}
+
+.article-math--centered .article-math-expression {
+  width: 100%;
+}
+
+.article-math--scrolling .article-math-expression {
+  width: var(--math-scroll-width);
 }
 
 .article-math--fit {
@@ -644,8 +682,6 @@ button.folder-header:hover {
 
 .article-math--scroll {
   width: 100%;
-  overflow-x: auto;
-  overflow-y: hidden;
 }
 
 .article-math-row {
@@ -654,11 +690,16 @@ button.folder-header:hover {
   gap: 10px;
   align-items: flex-start;
   max-width: 100%;
+  min-width: 0;
 }
 
 .article-math-row .article-math--full {
   flex: 1 1 320px;
   width: auto;
+}
+
+.article-math-row > .article-math {
+  min-width: 0;
 }
 
 .article-math-row--nowrap {
@@ -675,9 +716,33 @@ button.folder-header:hover {
   margin: 0;
 }
 
-.article-math--scroll mjx-container[display='true'] {
+.article-math-expression mjx-container[display='true'] {
   margin: 0;
   min-width: max-content;
+}
+
+.article-body mjx-container.article-math-overflow {
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+}
+
+.article-body :not(.article-math-expression) > mjx-container.article-math-overflow {
+  display: block;
+}
+
+.article-math-expression--draggable,
+.article-body mjx-container.article-math-overflow {
+  cursor: grab;
+  touch-action: pan-y pinch-zoom;
+}
+
+.article-math-dragging,
+.article-math-dragging * {
+  cursor: grabbing !important;
+  user-select: none;
 }
 
 .article-code-block {
@@ -777,5 +842,26 @@ button.folder-header:hover {
 
   .article-image-row {
     grid-template-columns: 1fr;
+  }
+
+  .article-math,
+  .article-math--fit,
+  .article-math--full,
+  .article-math--scroll {
+    width: 100%;
+  }
+
+  .article-math {
+    padding: 10px;
+    column-gap: 6px;
+  }
+
+  .article-math-number {
+    font-size: 0.72rem;
+  }
+
+  .article-math-row--nowrap {
+    flex-wrap: wrap;
+    overflow-x: visible;
   }
 }

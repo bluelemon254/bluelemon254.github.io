@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
@@ -7,6 +7,20 @@ import { posts } from '../data/posts';
 import { formatDate } from '../utils/formatDate';
 
 const ALLOWED_MATH_MODES = new Set(['fit', 'scroll', 'full']);
+const MIN_MATH_ZOOM = 0.75;
+const MATH_NUMBER_GAP = 6;
+
+function findScrollableMathElement(target, article) {
+  let element = target;
+  while (element && element !== article) {
+    if (
+      element.matches?.('.article-math-expression, mjx-container.article-math-overflow') &&
+      element.scrollWidth > element.clientWidth + 1
+    ) return element;
+    element = element.parentElement;
+  }
+  return null;
+}
 
 function getMathMode(mode) {
   return ALLOWED_MATH_MODES.has(mode) ? mode : 'fit';
@@ -39,10 +53,15 @@ function normalizeMathItems(block) {
 }
 
 function renderMathItem(item, key, equationNumber) {
+  const hasEquationNumber = typeof equationNumber === 'number';
+
   return (
-    <div key={key} className={`article-math article-math--${item.mode}`}>
+    <div
+      key={key}
+      className={`article-math article-math--${item.mode}${hasEquationNumber ? ' article-math--numbered' : ''}`}
+    >
       <div className="article-math-expression">{`$$${item.value}$$`}</div>
-      {typeof equationNumber === 'number' ? (
+      {hasEquationNumber ? (
         <span className="article-math-number">({equationNumber})</span>
       ) : null}
     </div>
@@ -332,6 +351,9 @@ function renderContentBlock(block, key) {
 export default function PostPage() {
   const { slug } = useParams();
   const post = posts.find((item) => item.slug === slug);
+  const articleRef = useRef(null);
+  const mathDragRef = useRef(null);
+  const typesetRunRef = useRef({ slug: null, element: null, promise: null });
 
   const renderedContent = useMemo(() => {
     if (!post) {
@@ -346,10 +368,163 @@ export default function PostPage() {
       return;
     }
 
-    if (typeof window !== 'undefined' && window.MathJax?.typesetPromise) {
-      window.MathJax.typesetPromise();
+    let resizeObserver;
+    let animationFrame;
+    let cancelled = false;
+
+    const fitMathToWidth = () => {
+      cancelAnimationFrame(animationFrame);
+      animationFrame = requestAnimationFrame(() => {
+        articleRef.current?.querySelectorAll('.article-math--numbered').forEach((box) => {
+          box.classList.remove('article-math--centered', 'article-math--scrolling');
+        });
+
+        const containers = articleRef.current?.querySelectorAll('.article-body mjx-container[jax="CHTML"]');
+        containers?.forEach((container) => {
+          if (container.parentElement.closest('mjx-container')) return;
+
+          const math = container.querySelector(':scope > mjx-math');
+          const box = container.closest('.article-math--numbered');
+          const number = box?.querySelector('.article-math-number');
+          let availableWidth = container.parentElement.clientWidth;
+
+          if (number && availableWidth) {
+            const boxStyle = getComputedStyle(box);
+            const boxRect = box.getBoundingClientRect();
+            const contentLeft = boxRect.left + box.clientLeft + Number.parseFloat(boxStyle.paddingLeft);
+            const contentWidth = box.clientWidth - Number.parseFloat(boxStyle.paddingLeft) -
+              Number.parseFloat(boxStyle.paddingRight);
+            const center = contentLeft + contentWidth / 2;
+            const numberLeft = number.getBoundingClientRect().left;
+            availableWidth = Math.max(1, 2 * (numberLeft - MATH_NUMBER_GAP - center));
+          }
+
+          if (!math || !availableWidth) return;
+
+          container.style.zoom = '1';
+          container.classList.remove('article-math-overflow');
+          const mathWidth = math.getBoundingClientRect().width;
+          const requiredZoom = mathWidth > availableWidth
+            ? (availableWidth / mathWidth) * 0.98
+            : 1;
+          container.style.zoom = `${Math.max(MIN_MATH_ZOOM, requiredZoom)}`;
+          const needsScroll = math.getBoundingClientRect().width > availableWidth + 0.5;
+          container.classList.toggle('article-math-overflow', needsScroll);
+
+          if (box) {
+            if (needsScroll) {
+              box.style.setProperty('--math-scroll-width', `${availableWidth}px`);
+              box.classList.add('article-math--scrolling');
+            } else {
+              box.classList.add('article-math--centered');
+            }
+          }
+        });
+
+        articleRef.current?.querySelectorAll('.article-math-expression').forEach((expression) => {
+          expression.classList.toggle(
+            'article-math-expression--draggable',
+            expression.scrollWidth > expression.clientWidth + 1
+          );
+        });
+      });
+    };
+
+    const typesetAndFit = async () => {
+      if (!window.MathJax?.typesetPromise || !articleRef.current) return;
+      if (typesetRunRef.current.slug !== post.slug || typesetRunRef.current.element !== articleRef.current) {
+        typesetRunRef.current = {
+          slug: post.slug,
+          element: articleRef.current,
+          promise: window.MathJax.typesetPromise([articleRef.current])
+        };
+      }
+      await typesetRunRef.current.promise;
+      if (!cancelled) fitMathToWidth();
+    };
+
+    if (typeof ResizeObserver !== 'undefined' && articleRef.current) {
+      resizeObserver = new ResizeObserver(fitMathToWidth);
+      resizeObserver.observe(articleRef.current);
     }
+
+    const article = articleRef.current;
+    const handleMathWheel = (event) => {
+      const element = findScrollableMathElement(event.target, article);
+      if (!element) return;
+
+      const distance = Math.abs(event.deltaX) > Math.abs(event.deltaY)
+        ? event.deltaX
+        : event.deltaY;
+      const unit = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? element.clientWidth : 1;
+      const next = Math.max(0, Math.min(element.scrollWidth - element.clientWidth, element.scrollLeft + distance * unit));
+      if (next !== element.scrollLeft) {
+        element.scrollLeft = next;
+        event.preventDefault();
+      }
+    };
+    article?.addEventListener('wheel', handleMathWheel, { passive: false });
+
+    const mathJaxScript = document.getElementById('MathJax-script');
+    mathJaxScript?.addEventListener('load', typesetAndFit);
+    typesetAndFit();
+
+    return () => {
+      cancelled = true;
+      cancelAnimationFrame(animationFrame);
+      resizeObserver?.disconnect();
+      article?.removeEventListener('wheel', handleMathWheel);
+      mathJaxScript?.removeEventListener('load', typesetAndFit);
+      mathDragRef.current = null;
+    };
   }, [post]);
+
+  const stopMathDrag = (event) => {
+    const drag = mathDragRef.current;
+    if (!drag || drag.pointerId !== event.pointerId) return;
+
+    drag.element.classList.remove('article-math-dragging');
+    if (drag.element.hasPointerCapture(event.pointerId)) {
+      drag.element.releasePointerCapture(event.pointerId);
+    }
+    mathDragRef.current = null;
+  };
+
+  const handleMathPointerDown = (event) => {
+    if (event.button !== 0 || !['mouse', 'pen', 'touch'].includes(event.pointerType)) return;
+
+    const element = findScrollableMathElement(event.target, articleRef.current);
+    if (element) {
+      if (event.pointerType !== 'touch') {
+        const scrollbarHeight = (element.offsetHeight - element.clientHeight) *
+          (Number.parseFloat(getComputedStyle(element).zoom) || 1);
+        if (
+          event.target === element &&
+          scrollbarHeight > 0 &&
+          event.clientY >= element.getBoundingClientRect().bottom - scrollbarHeight
+        ) return;
+      }
+
+      mathDragRef.current = {
+        element,
+        pointerId: event.pointerId,
+        startX: event.clientX,
+        startScrollLeft: element.scrollLeft
+      };
+      element.setPointerCapture(event.pointerId);
+      if (event.pointerType !== 'touch') event.preventDefault();
+    }
+  };
+
+  const handleMathPointerMove = (event) => {
+    const drag = mathDragRef.current;
+    if (!drag || drag.pointerId !== event.pointerId) return;
+
+    drag.element.scrollLeft = drag.startScrollLeft - (event.clientX - drag.startX);
+    if (Math.abs(event.clientX - drag.startX) > 2) {
+      drag.element.classList.add('article-math-dragging');
+    }
+  };
 
   if (!post) {
     return (
@@ -367,7 +542,15 @@ export default function PostPage() {
 
   return (
     <div className="container single-column-page">
-      <article className="post-article">
+      <article
+        ref={articleRef}
+        className="post-article"
+        onPointerDown={handleMathPointerDown}
+        onPointerMove={handleMathPointerMove}
+        onPointerUp={stopMathDrag}
+        onPointerCancel={stopMathDrag}
+        onLostPointerCapture={stopMathDrag}
+      >
         <p className="eyebrow">{post.folder}</p>
         <h1>{post.title}</h1>
 
