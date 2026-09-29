@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "posts:build": "node scripts/generatePosts.mjs",
+    "test:grammar": "node --test scripts/writingGrammar.test.mjs"
   },
   "dependencies": {
     "katex": "^0.16.45",

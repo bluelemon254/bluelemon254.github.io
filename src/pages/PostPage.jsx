@@ -3,12 +3,40 @@ import { Link, useParams } from 'react-router-dom';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import Tag from '../components/Tag';
+import { contentImageUrl } from '../data/contentImages';
 import { posts } from '../data/posts';
 import { formatDate } from '../utils/formatDate';
 
 const ALLOWED_MATH_MODES = new Set(['fit', 'scroll', 'full']);
 const MIN_MATH_ZOOM = 0.75;
 const MATH_NUMBER_GAP = 6;
+
+function renderInline(text) {
+  if (typeof text !== 'string') return text;
+  const token = /(\\\([\s\S]*?\\\)|\$[^$\n]+\$|`[^`]+`|\*\*[^*]+\*\*|\*[^*]+\*|\[[^\]]+\]\([^\s)]+\))/g;
+  const parts = [];
+  let start = 0;
+  for (const match of text.matchAll(token)) {
+    const offset = match.index;
+    if (offset > start) parts.push(text.slice(start, offset));
+    const value = match[0];
+    if (value.startsWith('\\(') || value.startsWith('$')) parts.push(value);
+    else if (value.startsWith('`')) parts.push(<code key={offset}>{value.slice(1, -1)}</code>);
+    else if (value.startsWith('**')) parts.push(<strong key={offset}>{renderInline(value.slice(2, -2))}</strong>);
+    else if (value.startsWith('*')) parts.push(<em key={offset}>{renderInline(value.slice(1, -1))}</em>);
+    else {
+      const close = value.indexOf('](');
+      const href = value.slice(close + 2, -1);
+      parts.push(/^(https?:\/\/|mailto:|\/|#|\.\/|\.\.\/)/.test(href)
+        ? <a key={offset} href={href}>{value.slice(1, close)}</a>
+        : value);
+    }
+    start = offset + value.length;
+  }
+  if (!parts.length) return text;
+  if (start < text.length) parts.push(text.slice(start));
+  return parts;
+}
 
 function findScrollableMathElement(target, article) {
   let element = target;
@@ -78,7 +106,7 @@ function renderParagraphColumns(block, key) {
   return (
     <div key={key} className="article-paragraph-columns">
       {columns.map((text, index) => (
-        <p key={`${key}-${index}`}>{text}</p>
+        <p key={`${key}-${index}`}>{renderInline(text)}</p>
       ))}
     </div>
   );
@@ -106,7 +134,7 @@ function renderTableBlock(block, key) {
             <tr>
               {headers.map((header, index) => (
                 <th key={`${key}-h-${index}`} scope="col">
-                  {header}
+                  {renderInline(header)}
                 </th>
               ))}
             </tr>
@@ -116,7 +144,7 @@ function renderTableBlock(block, key) {
           {rows.map((row, rowIndex) => (
             <tr key={`${key}-r-${rowIndex}`}>
               {row.map((cell, cellIndex) => (
-                <td key={`${key}-r-${rowIndex}-c-${cellIndex}`}>{cell}</td>
+                  <td key={`${key}-r-${rowIndex}-c-${cellIndex}`}>{renderInline(cell)}</td>
               ))}
             </tr>
           ))}
@@ -138,7 +166,7 @@ function renderImageRowBlock(block, key) {
     <div key={key} className="article-image-row">
       {images.map((item, index) => (
         <figure key={`${key}-img-${index}`} className="article-image-row-item">
-          <img src={item.src} alt={item.alt || ''} loading="lazy" />
+          <img src={contentImageUrl(item.src)} alt={item.alt || ''} loading="lazy" />
           {item.caption ? <figcaption>{item.caption}</figcaption> : null}
         </figure>
       ))}
@@ -245,7 +273,7 @@ function renderEnumerationBlock(block, key) {
   return (
     <ol key={key} className="article-list article-list--ordered">
       {items.map((item, index) => (
-        <li key={`${key}-item-${index}`}>{item}</li>
+        <li key={`${key}-item-${index}`}>{renderInline(item)}</li>
       ))}
     </ol>
   );
@@ -261,7 +289,7 @@ function renderBulletPointsBlock(block, key) {
   return (
     <ul key={key} className="article-list article-list--unordered">
       {items.map((item, index) => (
-        <li key={`${key}-item-${index}`}>{item}</li>
+        <li key={`${key}-item-${index}`}>{renderInline(item)}</li>
       ))}
     </ul>
   );
@@ -277,7 +305,7 @@ function renderContentBlock(block, key) {
       return <hr key={key} className="article-divider" aria-hidden="true" />;
     }
 
-    return <p key={key}>{block}</p>;
+    return <p key={key}>{renderInline(block)}</p>;
   }
 
   switch (block.type) {
@@ -286,7 +314,12 @@ function renderContentBlock(block, key) {
         return <hr key={key} className="article-divider" aria-hidden="true" />;
       }
 
-      return <p key={key}>{block.text}</p>;
+      return <p key={key}>{renderInline(block.text)}</p>;
+    case 'heading': {
+      const level = [2, 3, 4].includes(block.level) ? block.level : 2;
+      const Heading = `h${level}`;
+      return <Heading key={key} className="article-heading">{renderInline(block.text)}</Heading>;
+    }
     case 'paragraph-columns':
       return renderParagraphColumns(block, key);
     case 'math': {
@@ -325,7 +358,7 @@ function renderContentBlock(block, key) {
     case 'image':
       return (
         <figure key={key} className="article-figure">
-          <img src={block.src} alt={block.alt || ''} loading="lazy" />
+          <img src={contentImageUrl(block.src)} alt={block.alt || ''} loading="lazy" />
           {block.caption ? <figcaption>{block.caption}</figcaption> : null}
         </figure>
       );

@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useMemo, useState } from 'react';
 import { postFolders } from '../data/posts';
+import { contentImageUrl } from '../data/contentImages';
 
 export default function LibraryPage() {
   const [openedFolders, setOpenedFolders] = useState(() =>
@@ -43,7 +44,7 @@ export default function LibraryPage() {
               aria-expanded={openedFolders[folder.name]}
             >
               <span className="folder-title">
-                <img className="folder-icon" src="/folder_icon.webp" alt="" aria-hidden="true" />
+                <img className="folder-icon" src={contentImageUrl('/images/folder_icon.webp')} alt="" aria-hidden="true" />
                 {folder.name}
               </span>
               <span className="folder-state">

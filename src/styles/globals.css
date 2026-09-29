@@ -425,6 +425,17 @@ button.folder-header:hover {
   color: #d8d8d8;
 }
 
+.article-heading {
+  margin: 10px 0 0;
+  line-height: 1.4;
+}
+
+.article-body code:not(.article-code-block code) {
+  padding: 0.1em 0.3em;
+  border-radius: 4px;
+  background: #252525;
+}
+
 .article-divider {
   width: 100%;
   margin: 2px 0;
